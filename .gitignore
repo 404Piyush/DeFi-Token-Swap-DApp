@@ -1,0 +1,24 @@
+# Dependencies
+/node_modules
+/shine-swap-pro/node_modules
+
+# Hardhat
+/artifacts
+/cache
+/coverage
+coverage.json
+typechain-types
+hardhat.config.js.bak
+
+# Vite
+/shine-swap-pro/dist
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS / Editor
+.DS_Store
+.vscode/
+Thumbs.db 

@@ -1,0 +1,28 @@
+{
+  "name": "shine-token",
+  "version": "1.0.0",
+  "description": "SHINE Token - Fully Automated Tokenomics",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
+    "verify:sepolia": "hardhat verify --network sepolia"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@openzeppelin/contracts": "^5.0.0",
+    "dotenv": "^16.6.1",
+    "hardhat": "^2.19.0",
+    "tailwindcss": "^3.4.0"
+  },
+  "keywords": [
+    "ethereum",
+    "solidity",
+    "token",
+    "defi",
+    "shine"
+  ],
+  "author": "SHINE Team",
+  "license": "MIT"
+}
