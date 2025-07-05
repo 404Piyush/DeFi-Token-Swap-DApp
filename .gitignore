@@ -22,3 +22,6 @@ hardhat.config.js.bak
 .DS_Store
 .vscode/
 Thumbs.db 
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
