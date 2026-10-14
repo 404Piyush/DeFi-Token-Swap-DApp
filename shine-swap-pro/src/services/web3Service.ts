@@ -27,7 +27,9 @@ export class Web3Service {
     try {
       // Request account access
       await window.ethereum.request({ method: 'eth_requestAccounts' });
-      
+
+      await this.ensureSepoliaNetwork();
+
       this.provider = new ethers.BrowserProvider(window.ethereum);
       this.signer = await this.provider.getSigner();
       const account = await this.signer.getAddress();
@@ -84,6 +86,39 @@ export class Web3Service {
     this.signer = null;
     this.shineToken = null;
     this.shineLP = null;
+  }
+
+  // ============================================================================
+  // NETWORK MANAGEMENT
+  // ============================================================================
+
+  private async ensureSepoliaNetwork(): Promise<void> {
+    if (!window.ethereum) {
+      throw new Error('MetaMask is not installed');
+    }
+    const sepoliaChainIdHex = '0xaa36a7'; // 11155111
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: sepoliaChainIdHex }],
+      });
+    } catch (switchError: any) {
+      // Chain not added to wallet: add it, then retry the switch
+      if (switchError.code === 4902) {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: sepoliaChainIdHex,
+            chainName: 'Sepolia Test Network',
+            nativeCurrency: { name: 'SepoliaETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: [NETWORKS.SEPOLIA.rpcUrl],
+            blockExplorerUrls: ['https://sepolia.etherscan.io'],
+          }],
+        });
+      } else {
+        throw switchError;
+      }
+    }
   }
 
   // ============================================================================
@@ -210,10 +245,8 @@ export class Web3Service {
 
     try {
       const amountBigInt = ethers.parseUnits(amount, 18);
-      // Approve double the amount to reduce future transactions
-      const approveAmount = amountBigInt * 2n;
-      
-      const tx = await this.shineToken.approve(CONTRACTS.SHINE_LP, approveAmount);
+
+      const tx = await this.shineToken.approve(CONTRACTS.SHINE_LP, amountBigInt);
       await tx.wait();
       
       return tx.hash;
@@ -230,30 +263,37 @@ export class Web3Service {
   async executeSwap(
     amount: string,
     isEthToShine: boolean,
-    account: string
+    account: string,
+    slippageBps: number = 100 // default 1%
   ): Promise<string> {
     if (!this.shineLP || !this.shineToken) {
       throw new Error('Wallet not connected');
     }
 
     try {
+      // Quote expected output, then derive minOut from slippage tolerance
+      const quoted = await this.calculateSwapOutput(amount, isEthToShine);
+      const quotedBigInt = ethers.parseUnits(quoted === '0' ? '0' : quoted, 18);
+      const minOut = (quotedBigInt * BigInt(10000 - slippageBps)) / 10000n;
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + 20 * 60); // 20 min
+
       let tx;
 
       if (isEthToShine) {
         // ETH → SHINE swap
         const ethValue = ethers.parseEther(amount);
-        tx = await this.shineLP.swapETHForShine({ value: ethValue });
+        tx = await this.shineLP.swapETHForShine(minOut, deadline, { value: ethValue });
       } else {
         // SHINE → ETH swap
         const shineValue = ethers.parseUnits(amount, 18);
-        
-        // Check and handle approval
+
+        // Check and handle approval (exact amount)
         const currentAllowance = await this.shineToken.allowance(account, CONTRACTS.SHINE_LP);
         if (currentAllowance < shineValue) {
           await this.approveTokens(amount);
         }
-        
-        tx = await this.shineLP.swapShineForETH(shineValue);
+
+        tx = await this.shineLP.swapShineForETH(shineValue, minOut, deadline);
       }
 
       await tx.wait();
@@ -395,13 +435,29 @@ export class Web3Service {
     }
     const lpContract = new ethers.Contract(lpContractDetails.contractAddress, lpContractAbi.abi, this.provider);
 
-    // Create filters for both swap event types, filtered by the user
+    // Chunked scan from deployment block: public RPCs reject wide single queries.
+    const CHUNK = 25000n;
+    const latest = BigInt(await this.provider.getBlockNumber());
+    const deployBlock = BigInt(
+      (lpContractDetails as { deployBlock?: number }).deployBlock ?? 0
+    );
+    let from = deployBlock;
+
     const ethToShineFilter = lpContract.filters.SwapETHForShine(userAddress);
     const shineToEthFilter = lpContract.filters.SwapShineForETH(userAddress);
 
-    // Query the blockchain for the events
-    const ethToShineEvents = await lpContract.queryFilter(ethToShineFilter);
-    const shineToEthEvents = await lpContract.queryFilter(shineToEthFilter);
+    const ethToShineEvents: EventLog[] = [];
+    const shineToEthEvents: EventLog[] = [];
+    while (from <= latest) {
+      const to = from + CHUNK > latest ? latest : from + CHUNK;
+      const [a, b] = await Promise.all([
+        lpContract.queryFilter(ethToShineFilter, Number(from), Number(to)),
+        lpContract.queryFilter(shineToEthFilter, Number(from), Number(to)),
+      ]);
+      ethToShineEvents.push(...(a as EventLog[]));
+      shineToEthEvents.push(...(b as EventLog[]));
+      from = to + 1n;
+    }
 
     // Process and map the events to our Transaction type
     const txsFromEth = ethToShineEvents

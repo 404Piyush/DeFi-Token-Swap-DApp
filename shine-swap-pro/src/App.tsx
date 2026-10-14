@@ -4,11 +4,10 @@
 
 import React, { useState, useEffect } from "react";
 import { web3Service } from "./services/web3Service";
-import type { SwapState } from "./types/contracts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ArrowDownUp, Wallet, TrendingUp, Shield, Zap, ExternalLink, History, CheckCircle, XCircle, Copy, ArrowLeft } from "lucide-react";
+import { ArrowDownUp, Wallet, ExternalLink, History, CheckCircle, XCircle, Copy, ArrowLeft } from "lucide-react";
 import { Toaster, toast } from 'sonner';
 
 // Helper to format balances
@@ -67,6 +66,7 @@ function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('swap');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [slippageBps, setSlippageBps] = useState(100); // 1% default
 
   useEffect(() => {
     const init = async () => {
@@ -95,13 +95,6 @@ function App() {
     const debounceTimer = setTimeout(calculateOutput, 300);
     return () => clearTimeout(debounceTimer);
   }, [swapState.fromAmount, swapState.isEthToShine, walletState.isConnected]);
-
-  const addTransaction = (tx: Omit<Transaction, 'timestamp'>) => {
-    const newTx = { ...tx, timestamp: Date.now() };
-    const updatedTxs = [newTx, ...transactions].slice(0, 20); // Keep last 20
-    setTransactions(updatedTxs);
-    localStorage.setItem('shine-swap-txs', JSON.stringify(updatedTxs));
-  };
 
   const connectWallet = async () => {
     setWalletLoading(true);
@@ -179,7 +172,7 @@ function App() {
   const handleSwap = async () => {
     if (!walletState.account || !swapState.fromAmount) return;
     setSwapState(prev => ({ ...prev, isLoading: true }));
-    const promise = () => web3Service.executeSwap(swapState.fromAmount, swapState.isEthToShine, walletState.account as string);
+    const promise = () => web3Service.executeSwap(swapState.fromAmount, swapState.isEthToShine, walletState.account as string, slippageBps);
     
     toast.promise(promise, {
       loading: 'Submitting swap...',
@@ -473,8 +466,28 @@ function App() {
                   </div>
                 )}
                 
+                {/* Slippage Tolerance */}
+                <div className="flex justify-between items-center bg-white/5 rounded-xl px-4 py-3 border border-white/10">
+                  <span className="text-sm text-gray-300">Slippage tolerance</span>
+                  <div className="flex gap-2">
+                    {[50, 100, 200].map((bps) => (
+                      <button
+                        key={bps}
+                        onClick={() => setSlippageBps(bps)}
+                        className={`px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
+                          slippageBps === bps
+                            ? 'bg-white text-black'
+                            : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                        }`}
+                      >
+                        {bps / 100}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Swap Button */}
-                <Button 
+                <Button  
                   className="w-full bg-white text-black hover:bg-gray-200 font-bold py-6 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl text-lg" 
                   onClick={handleSwap} 
                   disabled={isSwapDisabled()}
