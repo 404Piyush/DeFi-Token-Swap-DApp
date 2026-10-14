@@ -82,15 +82,18 @@ This project was built to showcase advanced skills in smart contract development
 
 The project contains two main contracts deployed on the Sepolia testnet:
 
-1.  **ShineToken (`0x7C5a0C4fa68c47740Cd51Dd6dFad5E754d019c05`):**
+1.  **ShineToken (`0x5e50Dcc53ad58922458152cE3C465ddC1CA5c3E1`):**
     *   An ERC20 token with an 18-decimal precision.
     *   Includes a fee-on-transfer mechanism that can be toggled by the owner.
-    *   [View on Sepolia Etherscan](https://sepolia.etherscan.io/address/0x7C5a0C4fa68c47740Cd51Dd6dFad5E754d019c05)
+    *   [View on Sepolia Etherscan](https://sepolia.etherscan.io/address/0x5e50Dcc53ad58922458152cE3C465ddC1CA5c3E1)
 
-2.  **ShineSwapLP (`0x476DaA7f3c23C7e46A526c20288CF9e74D08a564`):**
+2.  **ShineSwapLP (`0x15691E3e0Ae168367d013d1b77FeB6cBb235E41d`):**
     *   The liquidity pool contract that holds reserves of both ETH and SHINE.
-    *   Handles all swap logic, liquidity management, and price calculations.
-    *   [View on Sepolia Etherscan](https://sepolia.etherscan.io/address/0x476DaA7f3c23C7e46A526c20288CF9e74D08a564)
+    *   Handles all swap logic with slippage protection (`minAmountOut` + `deadline`), liquidity management, and price calculations.
+    *   [View on Sepolia Etherscan](https://sepolia.etherscan.io/address/0x15691E3e0Ae168367d013d1b77FeB6cBb235E41d)
+
+> Audited 2026-10-14 — see [AUDIT.md](./AUDIT.md). Previous deployment
+> (`0x7C5a...19c05` / `0x476D...D08a564`) is superseded.
 
 ---
 
