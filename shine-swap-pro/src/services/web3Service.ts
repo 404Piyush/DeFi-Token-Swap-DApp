@@ -402,6 +402,34 @@ export class Web3Service {
   }
 
   // ============================================================================
+  // POOL STATS (read-only, no wallet needed)
+  // ============================================================================
+
+  async getPoolStats(): Promise<{
+    ethReserve: string;
+    shineReserve: string;
+    shinePriceEth: string;
+    ethPriceShine: string;
+  }> {
+    const rpc = new ethers.JsonRpcProvider(NETWORKS.SEPOLIA.rpcUrl);
+    const token = new ethers.Contract(CONTRACTS.SHINE_TOKEN, shineTokenAbi.abi, rpc);
+    const [ethReserve, shineReserve] = await Promise.all([
+      rpc.getBalance(CONTRACTS.SHINE_LP),
+      token.balanceOf(CONTRACTS.SHINE_LP),
+    ]);
+    if (ethReserve === 0n || shineReserve === 0n) {
+      return { ethReserve: '0', shineReserve: '0', shinePriceEth: '0', ethPriceShine: '0' };
+    }
+    const one = ethers.parseEther('1');
+    return {
+      ethReserve: ethers.formatEther(ethReserve),
+      shineReserve: ethers.formatUnits(shineReserve, 18),
+      shinePriceEth: ethers.formatEther((ethReserve * one) / shineReserve),
+      ethPriceShine: ethers.formatUnits((shineReserve * one) / ethReserve, 18),
+    };
+  }
+
+  // ============================================================================
   // UTILITY METHODS
   // ============================================================================
 
