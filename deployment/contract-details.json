@@ -1,12 +1,11 @@
 {
-  "contractAddress": "0xB9D1Bd8C825017C3dA1690c82eFe4AefdF30E879",
+  "contractAddress": "0x5e50Dcc53ad58922458152cE3C465ddC1CA5c3E1",
   "network": "sepolia",
-  "deployedAt": "2025-07-01T08:09:38.615Z",
+  "deployedAt": "2026-10-14T15:01:01.819Z",
+  "deployBlock": 11914015,
   "symbol": "SHINE",
   "name": "Shine Token",
   "decimals": 18,
   "totalSupply": "10000000",
-  "theme": "LeBron James 'You Are My Sunshine' Meme",
-  "etherscanUrl": "https://sepolia.etherscan.io/token/0xB9D1Bd8C825017C3dA1690c82eFe4AefdF30E879",
-  "memeReference": "https://knowyourmeme.com/memes/lebron-james-you-are-my-sunshine-edits"
+  "etherscanUrl": "https://sepolia.etherscan.io/token/0x5e50Dcc53ad58922458152cE3C465ddC1CA5c3E1"
 }

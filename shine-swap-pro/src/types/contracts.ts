@@ -4,10 +4,10 @@
 
 import { Contract } from 'ethers';
 
-// Contract Addresses
+// Contract Addresses (redeployed 2026-10-14, audited - see AUDIT.md)
 export const CONTRACTS = {
-  SHINE_TOKEN: "0x7C5a0C4fa68c47740Cd51Dd6dFad5E754d019c05",
-  SHINE_LP: "0x476DaA7f3c23C7e46A526c20288CF9e74D08a564"
+  SHINE_TOKEN: "0x5e50Dcc53ad58922458152cE3C465ddC1CA5c3E1",
+  SHINE_LP: "0x15691E3e0Ae168367d013d1b77FeB6cBb235E41d"
 } as const;
 
 // Network Configuration
